@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .header h1 { font-size: 1.8rem; }
+        .refresh-btn {
+            background: #4a90d9;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .refresh-btn:hover { background: #357abd; }
+        
+        .section { margin-bottom: 30px; }
+        .section h2 {
+            font-size: 1.2rem;
+            color: #888;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .light-card {
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .light-card.on { background: rgba(74, 144, 217, 0.4); }
+        .light-card:hover { transform: translateY(-2px); }
+        .light-card .icon { font-size: 2rem; margin-bottom: 10px; }
+        .light-card .name { font-size: 0.9rem; color: #aaa; }
+        .light-card .status { 
+            margin-top: 8px; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+        .light-card .status.on { background: #16a34a; }
+        .light-card .status.off { background: #666; }
+        
+        .temp-card {
+            text-align: center;
+        }
+        .temp-card .icon { font-size: 2rem; margin-bottom: 10px; }
+        .temp-card .temp { font-size: 2rem; font-weight: bold; }
+        .temp-card .name { color: #888; font-size: 0.85rem; margin-top: 5px; }
+        
+        .loading { text-align: center; padding: 40px; color: #888; }
+        .error { 
+            background: rgba(255,0,0,0.2); 
+            padding: 20px; 
+            border-radius: 10px; 
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏠 Home Dashboard</h1>
+        <button class="refresh-btn" onclick="loadData()">Refresh</button>
+    </div>
+    
+    <div id="content">
+        <div class="loading">Loading...</div>
+    </div>
+
+    <script>
+        const HA_URL = '';  // Use proxy
+        const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI0NTg3MzNlM2VhODI0NjI0YjYwMjNlOGQyNjMwMmZiMSIsImlhdCI6MTc3Njg1Mzg0NCwiZXhwIjoyMDkyMjEzODQ0fQ.4dV4pjExCvBERpeK4ANPqlRtYqbQKAZQvHQCGtiahaM';
+        
+        let states = [];
+        
+        async function api(endpoint, method = 'GET', body = null) {
+            const opts = {
+                method,
+                headers: {
+                    'Authorization': `Bearer ${TOKEN}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(`${HA_URL}${endpoint}`, opts);
+            return res.json();
+        }
+        
+        async function loadData() {
+            document.getElementById('content').innerHTML = '<div class="loading">Loading...</div>';
+            try {
+                states = await api('/api/states');
+                render();
+            } catch(e) {
+                document.getElementById('content').innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            }
+        }
+        
+        function render() {
+            const lights = states.filter(e => e.entity_id.startsWith('light.') && e.state !== 'unavailable');
+            const temps = states.filter(e => 
+                (e.entity_id.includes('temperature') || e.entity_id.includes('temp')) && 
+                e.entity_id.startsWith('sensor.') &&
+                e.state !== 'unavailable' &&
+                !isNaN(parseFloat(e.state))
+            );
+            const switches = states.filter(e => e.entity_id.startsWith('switch.') && e.state !== 'unavailable');
+            
+            let html = '';
+            
+            // Lights Section
+            html += `<div class="section"><h2>💡 Lights</h2><div class="grid">`;
+            lights.forEach(light => {
+                const name = light.attributes.friendly_name || light.entity_id.replace('light.','');
+                const isOn = light.state === 'on';
+                html += `<div class="card light-card ${isOn ? 'on' : ''}" 
+                    id="card-${light.entity_id}" onclick="toggleLight('${light.entity_id}')">
+                    <div class="icon">💡</div>
+                    <div class="name">${name}</div>
+                    <div class="status ${isOn ? 'on' : 'off'}" id="status-${light.entity_id}">${isOn ? 'ON' : 'OFF'}</div>
+                </div>`;
+            });
+            html += '</div></div>';
+            
+            // Temperatures Section
+            const keyTemps = temps.filter(e => 
+                e.entity_id.includes('lounge') || e.entity_id.includes('garage') || 
+                e.entity_id.includes('hallway') || e.entity_id.includes('bedroom') ||
+                e.entity_id.includes('dry_box') || e.entity_id.includes('nas')
+            );
+            html += `<div class="section"><h2>🌡️ Temperatures</h2><div class="grid">`;
+            keyTemps.forEach(temp => {
+                const name = temp.attributes.friendly_name || temp.entity_id.replace('sensor.','').replace(/_/g,' ');
+                html += `<div class="card temp-card"><div class="icon">🌡️</div><div class="temp">${temp.state}°</div><div class="name">${name}</div></div>`;
+            });
+            html += '</div></div>';
+            
+            // Switches Section
+            html += `<div class="section"><h2>🔌 Switches</h2><div class="grid">`;
+            switches.forEach(sw => {
+                const name = sw.attributes.friendly_name || sw.entity_id.replace('switch.','');
+                const isOn = sw.state === 'on';
+                html += `<div class="card light-card ${isOn ? 'on' : ''}" 
+                    id="card-${sw.entity_id}" onclick="toggleSwitch('${sw.entity_id}')">
+                    <div class="icon">🔌</div>
+                    <div class="name">${name}</div>
+                    <div class="status ${isOn ? 'on' : 'off'}" id="status-${sw.entity_id}">${isOn ? 'ON' : 'OFF'}</div>
+                </div>`;
+            });
+            html += '</div></div>';
+            
+            document.getElementById('content').innerHTML = html;
+        }
+        
+        async function toggleLight(entityId) {
+            const card = document.getElementById(`card-${entityId}`);
+            const status = document.getElementById(`status-${entityId}`);
+            const isOn = status.textContent === 'ON';
+            
+            // Optimistic update
+            card.classList.toggle('on', !isOn);
+            status.classList.toggle('on', !isOn);
+            status.textContent = isOn ? 'OFF' : 'ON';
+            
+            try {
+                await api(`/api/services/light/${isOn ? 'turn_off' : 'turn_on'}`, 'POST', { entity_id: entityId });
+                // Update local state
+                const light = states.find(e => e.entity_id === entityId);
+                if (light) light.state = isOn ? 'off' : 'on';
+            } catch(e) {
+                // Revert on error
+                card.classList.toggle('on', isOn);
+                status.classList.toggle('on', isOn);
+                status.textContent = isOn ? 'ON' : 'OFF';
+            }
+        }
+        
+        async function toggleSwitch(entityId) {
+            const card = document.getElementById(`card-${entityId}`);
+            const status = document.getElementById(`status-${entityId}`);
+            const isOn = status.textContent === 'ON';
+            
+            // Optimistic update
+            card.classList.toggle('on', !isOn);
+            status.classList.toggle('on', !isOn);
+            status.textContent = isOn ? 'OFF' : 'ON';
+            
+            try {
+                await api(`/api/services/switch/${isOn ? 'turn_off' : 'turn_on'}`, 'POST', { entity_id: entityId });
+                const sw = states.find(e => e.entity_id === entityId);
+                if (sw) sw.state = isOn ? 'off' : 'on';
+            } catch(e) {
+                card.classList.toggle('on', isOn);
+                status.classList.toggle('on', isOn);
+                status.textContent = isOn ? 'ON' : 'OFF';
+            }
+        }
+        
+        loadData();
+    </script>
+</body>
+</html>
