@@ -1,0 +1,122 @@
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 30px; font-size: 2rem; }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #aaa;
+        }
+        
+        .current {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .current-temp {
+            font-size: 4rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        .current-desc {
+            text-align: center;
+            font-size: 1.3rem;
+            color: #aaa;
+            margin: 10px 0;
+        }
+        .current-details {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .detail { text-align: center; }
+        .detail-label { color: #888; font-size: 0.9rem; }
+        .detail-value { font-size: 1.2rem; font-weight: 600; }
+        
+        .location {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        
+        .forecast {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .forecast-day {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+        }
+        .forecast-dayname { color: #888; font-size: 0.9rem; }
+        .forecast-temp { font-size: 1.5rem; font-weight: bold; margin: 10px 0; }
+        .forecast-desc { font-size: 0.85rem; color: #aaa; }
+        
+        .hourly-rain {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        .hourly-rain h3 { 
+            margin-bottom: 15px; 
+            font-size: 1.1rem;
+            color: #aaa;
+        }
+        .hourly-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .hourly-item {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 8px 4px;
+            text-align: center;
+            min-width: 50px;
+        }
+        .hourly-time { font-size: 0.75rem; color: #888; }
+        .hourly-temp { font-size: 1rem; font-weight: 600; margin: 5px 0; }
+        .hourly-rain-icon { font-size: 1.2rem; }
+        .rain-high { color: #ef4444; }
+        .rain-med { color: #f59e0b; }
+        .rain-low { color: #22c55e; }
+        
+        .error {
+            background: rgba(255,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: #ff6b6b;
+        }
+        
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 30px;
+            font-size: 1rem;
+            background: #4a90d9;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        button:hover { background: #357abd; }
